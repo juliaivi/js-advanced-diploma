@@ -19,6 +19,12 @@ export default class Character {
     this.defence = 0;
     this.health = 50;
     this.type = type;
+
+    // Свойство new.target позволяет определить была ли функция
+    // или конструктор вызваны с помощью оператора new.
+    if (new.target.name === 'Character') {
+      throw new Error("you can't create a class with type Character");
+    }
     // TODO: выбросите исключение, если кто-то использует "new Character()"
   }
 }
