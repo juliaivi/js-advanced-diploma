@@ -17,6 +17,8 @@ test('Created Bowman class', () => {
     level: 1,
     attack: 25,
     defence: 25,
+    radiusMovement: 2,
+    radiusAttack: 2,
   });
 });
 
@@ -27,6 +29,8 @@ test('Created Daemon class', () => {
     level: 1,
     attack: 10,
     defence: 10,
+    radiusMovement: 1,
+    radiusAttack: 4,
   });
 });
 
@@ -37,6 +41,8 @@ test('Created Magician class', () => {
     level: 1,
     attack: 10,
     defence: 40,
+    radiusMovement: 1,
+    radiusAttack: 4,
   });
 });
 
@@ -47,6 +53,8 @@ test('Created Swordsman class', () => {
     level: 1,
     attack: 40,
     defence: 10,
+    radiusMovement: 4,
+    radiusAttack: 1,
   });
 });
 
@@ -57,6 +65,8 @@ test('Created Undead class', () => {
     level: 1,
     attack: 40,
     defence: 10,
+    radiusMovement: 4,
+    radiusAttack: 1,
   });
 });
 
@@ -67,5 +77,7 @@ test('Created Vampire class', () => {
     level: 1,
     attack: 25,
     defence: 25,
+    radiusMovement: 2,
+    radiusAttack: 2,
   });
 });
