@@ -10,6 +10,9 @@ import PositionedCharacter from './PositionedCharacter';
 import { generateTeam } from './generators';
 import GamePlay from './GamePlay';
 import cursors from './cursors';
+import getCoordinates from './getCoordinates';
+import definitionSteps from './definitionSteps';
+import definitionAttack from './definitionAttack';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -25,6 +28,9 @@ export default class GameController {
     this.activeCell = null;
     this.userTypes = [Bowman, Swordsman, Magician];
     this.computerTypes = [Vampire, Daemon, Undead];
+    this.number = null;
+
+    this.a = this.gamePlay.deselectCell;
 
     // this.boardSize = this.boardSize;
   }
@@ -106,29 +112,52 @@ export default class GameController {
     // TODO: react to click
     // делает желтую обводку и выкидывает ошибку если выбрали персонажа противника
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);
+    // если по нему нажали
     if (characterInCell) {
+      // проверяем персонажа, если это персонаж противника, то выбрасываем ошибку
       if (!this.characterTypeUser.includes(characterInCell.character.type)) {
         GamePlay.showError('Вы не можите выбрать данного персонажа. Это персонаж противника!');
         return;
       }
-
+      // если персонаж выбран
       if (this.activeCharacte !== null) {
-        if (this.activeCharacte.position !== characterInCell.position) {
+        // выбранный персонаж не совпадает с сохранненым (смена одного персонажа на  другого)
+        if (this.activeCharacte.position !== characterInCell.position && this.characterTypeUser.includes(characterInCell.character.type)) {
+          // удаляем старого активного игрока
           this.gamePlay.deselectCell(this.activeCharacte.position);
         }
       }
+      // добавляем нового активного игрока
       this.activeCharacte = characterInCell;
+      // делаем обводку активного игрока
       this.gamePlay.selectCell(index);
     }
+
+    // Делаем шаг. Клик в пустое поле
+    // если выбран активный персонаж
+    if (this.activeCharacte) {
+      // Если поле есть в допустимых значениях и в нем нет героя
+      // если там нет игрока, оно не пустое и можно ходить
+      if (this.number !== null && !characterInCell && this.number === 1) {
+        // снимаем обводку у активного игрока
+        this.gamePlay.deselectCell(this.activeCharacte.position);
+        // записываем новую позицию игрока
+        this.activeCharacte.position = index;
+        // удаляем зеленую обводку куда можно походить
+        this.gamePlay.deselectCell(index);
+      } else {
+        this.gamePlay.setCursor(cursors.notallowed);
+      }
+      // перерисовываем заново персонажей на поле
+      this.gamePlay.redrawPositions(this.allCharactersOnField);
+    }
+
+    //Делаем атаку.
+    //showDamage, redrawPositions
   }
 
   onCellEnter(index) {
     // TODO: react to mouse enter
-    // границы поля для хотьбы
-    let maxX;
-    let minX;
-    let maxY;
-    let minY;
     // проверка есть ли персанаж в этой клетке
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);
     // Вывод информации о персонажах
@@ -143,50 +172,30 @@ export default class GameController {
         this.gamePlay.setCursor(cursors.auto);
         return;
       }
+      // Атака. Определяем можно ли атаковать.
       // Наведение на врага, если это другой враг, то выделение снимается
       if (this.activeCharacte !== null && this.activeCharacteComputer !== null && !this.characterTypeUser.includes(characterInCell.character.type)) {
         this.gamePlay.deselectCell(this.activeCharacteComputer.position);
-        // получаем координаты персонажа...........................вернуться и подумать где лучше это прописать и сократить код (номер 5)
-        this.coordinatesCharacterX = this.activeCharacte.position % this.gamePlay.boardSize;
-        this.coordinatesCharacterY = Math.floor(this.activeCharacte.position / this.gamePlay.boardSize);
       }
       // получаем координаты персонажа
-      // this.coordinatesCharacterX = this.activeCharacte.position % this.gamePlay.boardSize;
-      // this.coordinatesCharacterY = Math.floor(this.activeCharacte.position / this.gamePlay.boardSize);
-
+      const [coordinatesCharacterX, coordinatesCharacterY] = getCoordinates(this.activeCharacte.position, this.gamePlay.boardSize);
       // проверка индекса
       if (this.activeCell !== null && this.activeCell !== index && this.activeCharacteComputer !== index) {
         this.gamePlay.deselectCell(this.activeCell);
       }
       // получаем индекс ячейки
       this.activeCell = index;
-      // получаем координаты ячейки
-      this.coordinatesIndexX = this.activeCell % this.gamePlay.boardSize;
-      this.coordinatesIndexY = Math.floor(this.activeCell / this.gamePlay.boardSize);
+      // // получаем координаты ячейки
+      const [coordinatesIndexX, coordinatesIndexY] = getCoordinates(this.activeCell, this.gamePlay.boardSize);
       // опеределяем атаку
       const attack = this.activeCharacte.character.radiusAttack;
-      // условие для атаки
-      minX = this.coordinatesCharacterX - attack;
-      minY = this.coordinatesCharacterY - attack;
-      if (minX < 0) {
-        minX = 0;
-      }
-      if (minY < 0) {
-        minY = 0;
-      }
-      maxX = this.coordinatesCharacterX + attack;
-      maxY = this.coordinatesCharacterY + attack;
-      if (maxX > 8) {
-        maxX = 8;
-      }
-      if (maxY > 8) {
-        maxY = 8;
-      }
+      //
       if (this.activeCharacte !== null) {
         this.activeCharacteComputer = characterInCell;
       }
+      const getAttack = definitionAttack(coordinatesCharacterX, coordinatesCharacterY, coordinatesIndexX, coordinatesIndexY, attack);
       // проверка на радиус поражения
-      if (maxX >= this.coordinatesIndexX && this.coordinatesIndexX >= minX && maxY >= this.coordinatesIndexY && this.coordinatesIndexY >= minY && this.activeCharacte !== null) {
+      if (getAttack === true) {
         this.gamePlay.deselectCell(this.activeCell);
         this.gamePlay.selectCell(index, 'red');
         this.gamePlay.setCursor(cursors.crosshair);
@@ -195,66 +204,33 @@ export default class GameController {
       }
       return;
     }
-    // Активное поле. Куда можно ходить. - окрашивание
+    // Доступные шаги.Активное поле. Куда можно ходить. - окрашивание
     if (this.activeCharacte !== null && this.activeCharacteComputer === null && this.allCharactersOnField.find((el) => el.position !== index)) {
-      const displacementField = [
-        [1, 0, 0, 0, 1, 0, 0, 0, 1],
-        [0, 1, 0, 0, 1, 0, 0, 1, 0],
-        [0, 0, 1, 0, 1, 0, 1, 0, 0],
-        [0, 0, 0, 1, 1, 1, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 0, 1, 0, 1, 0, 0],
-        [0, 1, 0, 0, 1, 0, 0, 1, 0],
-        [1, 0, 0, 0, 1, 0, 0, 0, 1],
-      ];
-
+      // получаем шаг персонажа
+      const step = this.activeCharacte.character.radiusMovement;
       // получаем координаты персонажа
-      this.coordinatesCharacterX = this.activeCharacte.position % this.gamePlay.boardSize;
-      this.coordinatesCharacterY = Math.floor(this.activeCharacte.position / this.gamePlay.boardSize);
+      const [coordinatesCharacterX, coordinatesCharacterY] = getCoordinates(this.activeCharacte.position, this.gamePlay.boardSize);
       // проверка индекса
       if (this.activeCell !== null && this.activeCell !== index && this.activeCharacteComputer !== index) {
         this.gamePlay.deselectCell(this.activeCell);
       }
-      // получаем шаг персонажа
-      const step = this.activeCharacte.character.radiusMovement;
       // получаем индекс ячейки
       this.activeCell = index;
       // получаем координаты ячейки
-      this.coordinatesIndexX = this.activeCell % this.gamePlay.boardSize;
-      this.coordinatesIndexY = Math.floor(this.activeCell / this.gamePlay.boardSize);
-      // условие для шага
-      if (step === 1) {
-        minX = 3;
-        maxX = 5;
-        minY = 3;
-        maxY = 5;
+      const [coordinatesIndexX, coordinatesIndexY] = getCoordinates(this.activeCell, this.gamePlay.boardSize);
+      // определям может ли персонаж ходить
+      this.number = definitionSteps(coordinatesCharacterX, coordinatesCharacterY, coordinatesIndexX, coordinatesIndexY, step);
+      if (this.number === 1) {
+        this.gamePlay.setCursor(cursors.pointer);
+        this.gamePlay.selectCell(index, 'green');
+      } else if (this.number === 0) {
+        this.gamePlay.setCursor(cursors.notallowed);
+      } else {
+        this.gamePlay.setCursor(cursors.auto);
       }
-      if (step === 2) {
-        minX = 2;
-        maxX = 6;
-        minY = 2;
-        maxY = 6;
-      }
-      if (step === 4) {
-        minX = 0;
-        maxX = 8;
-        minY = 0;
-        maxY = 8;
-      }
-      // расчеты сдвига координт для хотьбы
-      const coordinateShiftX = 4 - (this.coordinatesCharacterX - this.coordinatesIndexX);
-      const coordinateShiftY = 4 - (this.coordinatesCharacterY - this.coordinatesIndexY);
-      if (maxX >= coordinateShiftX && coordinateShiftX >= minX && maxY >= coordinateShiftY && coordinateShiftY >= minY) {
-        if (displacementField[coordinateShiftX][coordinateShiftY] === 1) {
-          this.gamePlay.setCursor(cursors.pointer);
-          this.gamePlay.selectCell(index, 'green');
-        } else {
-          this.gamePlay.setCursor(cursors.notallowed);
-        }
-        return;
-      }
+      return;
     }
+
     this.gamePlay.setCursor(cursors.auto);
   }
 
