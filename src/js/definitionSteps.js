@@ -1,4 +1,32 @@
-// условие для шага
+// import getCoordinates from './getCoordinates';
+
+// export default function definitionSteps(obj, obj1, elem, step) {
+//   const displacementField = [
+//     [1, 0, 0, 0, 1, 0, 0, 0, 1],
+//     [0, 1, 0, 0, 1, 0, 0, 1, 0],
+//     [0, 0, 1, 0, 1, 0, 1, 0, 0],
+//     [0, 0, 0, 1, 1, 1, 0, 0, 0],
+//     [1, 1, 1, 1, 1, 1, 1, 1, 1],
+//     [0, 0, 0, 1, 1, 1, 0, 0, 0],
+//     [0, 0, 1, 0, 1, 0, 1, 0, 0],
+//     [0, 1, 0, 0, 1, 0, 0, 1, 0],
+//     [1, 0, 0, 0, 1, 0, 0, 0, 1],
+//   ];
+
+//   const [coordinatesCharacterX, coordinatesCharacterY] = getCoordinates(obj, elem);
+//   const [coordinatesIndexX, coordinatesIndexY] = getCoordinates(obj1, elem);
+//   const coordinateShiftX = 4 - (coordinatesCharacterX - coordinatesIndexX);
+//   const coordinateShiftY = 4 - (coordinatesCharacterY - coordinatesIndexY);
+//   if (displacementField[coordinateShiftX][coordinateShiftY] < step) { 
+//     if (displacementField[coordinateShiftX][coordinateShiftY] === 1) {
+      
+//         return 1;
+//     }
+//     return 0;
+//   }
+// }
+
+//условие для шага старое
 export default function definitionSteps(el, el2, el3, el4, step) {
   let minX;
   let maxX;
