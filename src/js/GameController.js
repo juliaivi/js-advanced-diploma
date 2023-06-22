@@ -10,7 +10,7 @@ import PositionedCharacter from './PositionedCharacter';
 import { generateTeam } from './generators';
 import GamePlay from './GamePlay';
 import cursors from './cursors';
-// import getCoordinates from './getCoordinates';
+
 import definitionSteps from './definitionSteps';
 import definitionAttack from './definitionAttack';
 import GameState from './GameState';
@@ -19,22 +19,20 @@ export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
-    this.level = 1;
-    // this.teamUser = [];
-    // this.teamComputer = [];
-    this.teamLocationUser = [];
+    this.userTypes = [Bowman, Swordsman, Magician];
+    this.computerTypes = [Vampire, Daemon, Undead];
     this.characterTypeUser = ['bowman', 'swordsman', 'magician'];
+    this.level = 1;
+
+    this.teamLocationUser = [];
     this.activeCharacte = null;
     this.activeCharacteComputer = null;
     this.activeCell = null;
-    this.userTypes = [Bowman, Swordsman, Magician];
-    this.computerTypes = [Vampire, Daemon, Undead];
     this.number = null;
     this.clickCharterComputer = null;
-
-    this.a = this.gamePlay.deselectCell;
     this.step = null;
-    this.getAttack = false;
+    this.teamUser = [];
+    this.teamComputer = [];
     this.teamLocationUser = [];
     this.teamLocationComputer = [];
     this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
@@ -42,7 +40,23 @@ export default class GameController {
   }
 
   init() {
+    this.newGame();
+
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this)); // В качестве аргумента передавая callback. Callback принимает всего один аргумент - индекс ячейки поля, на которой происходит событие.
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this)); // Выход указателя мыши из ячейки поля
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));// Клик мышью по ячейке поля
+
+    // нажатие на кнопки
+    this.gamePlay.addNewGameListener(this.newGame.bind(this));
+    this.gamePlay.addSaveGameListener(this.saveGame.bind(this));
+    this.gamePlay.addLoadGameListener(this.loadGame.bind(this));
+  }
+
+  newGame() {
+    this.getAttack = false;
+    this.gameStop = false;
     // Отрисовка поля
+    this.gameState = new GameState(0);
     this.gamePlay.drawUi(themes[this.level]);
 
     const teamUser = generateTeam(this.userTypes, this.level, 2);
@@ -54,17 +68,13 @@ export default class GameController {
     this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
     this.charactersPositions = this.allCharactersOnField.map((character) => character.position);// Координаты всех персонажей в массиве координат
     this.gamePlay.redrawPositions(this.allCharactersOnField);
-    // Вход указателя мыши в ячейку поля.
-    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this)); // В качестве аргумента передавая callback. Callback принимает всего один аргумент - индекс ячейки поля, на которой происходит событие.
-    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this)); // Выход указателя мыши из ячейки поля
-    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));// Клик мышью по ячейке поля
-    this.gameState = new GameState();
+
     // сохранила данные об игре
-    GameState.from({ gamer: 'player' });
-    this.gameState.activeField = themes[this.level];
+    this.gameState.activeThemes = themes[this.level];
+    this.gameState.teamLocationComputer = this.teamLocationComputer;
     this.gameState.allCharactersOnField = this.allCharactersOnField;
     this.gameState.level = this.level;
-    this.gameState.activeTeam = 'player';
+    this.gameState.activeTeame = 'player';
   }
 
   // ....Отрисовка команд персонажей
@@ -109,7 +119,12 @@ export default class GameController {
   }
 
   onCellClick(index) {
-    // TODO: react to click
+    // блокировка поля
+    if (this.gameStop) {
+      this.gamePlay.setCursor('auto');
+      this.gamePlay.deselectCell(index);
+      return;
+    }
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);// делает желтую обводку и выкидывает ошибку если выбрали персонажа противника
 
     if (characterInCell) { // если по нему нажали
@@ -128,7 +143,6 @@ export default class GameController {
       if (this.characterTypeUser.includes(characterInCell.character.type)) {
         this.activeCharacteComputer = null;
         this.activeCharacte = characterInCell; // добавляем нового активного игрока
-        // if (this.activeCharacte )
         this.gamePlay.selectCell(index);// делаем обводку активного игрока
       } else {
         this.clickCharterComputer = characterInCell;
@@ -141,6 +155,13 @@ export default class GameController {
 
   onCellEnter(index) {
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);// проверка есть ли персанаж в этой клетке
+    // блокировка поля
+    if (this.gameStop) {
+      this.gamePlay.setCursor('auto');
+      this.gamePlay.deselectCell(index);
+      return;
+    }
+
     if (characterInCell) { // Вывод информации о персонажах
       const message = `\u{1F396}${characterInCell.character.level}\u{2694}${characterInCell.character.attack}\u{1F6E1}${characterInCell.character.defence}\u{2764}${characterInCell.character.health}`;
       this.gamePlay.showCellTooltip(message, index);
@@ -155,8 +176,6 @@ export default class GameController {
       return;
     }
     this.displayStep(index);
-
-    this.gamePlay.setCursor(cursors.auto);
   }
 
   displayAttack(index, obj) {
@@ -173,12 +192,11 @@ export default class GameController {
       this.activeCharacteComputer = obj;
     }
     this.getAttack = definitionAttack(this.activeCharacte.position, this.activeCell, this.gamePlay.boardSize, radiusattack);
-    if (this.getAttack === true) { // проверка на радиус поражения
+    if (this.getAttack === true && this.activeCharacte.position !== this.activeCell) { // проверка на радиус поражения
       this.gamePlay.deselectCell(this.activeCell);
       this.gamePlay.selectCell(index, 'red');
       this.gamePlay.setCursor(cursors.crosshair);
       this.activeCharacteComputer = null;
-      // this.getAttack = false;
     } else {
       this.gamePlay.setCursor(cursors.notallowed);
       this.activeCharacteComputer = null;
@@ -189,7 +207,7 @@ export default class GameController {
     // Доступные шаги.Активное поле. Куда можно ходить. - окрашивание
     if (this.activeCharacte !== null && this.activeCharacteComputer === null && this.allCharactersOnField.find((el) => el.position !== index)) {
       this.step = this.activeCharacte.character.radiusMovement;// получаем шаг персонажа
-      if (this.activeCell !== null && this.activeCell !== index && this.activeCharacte.position !== this.activeCell && this.activeCharacte !== null) { // && this.activeCharacteComputer !== index&& this.characterTypeUser.includes(this.activeCharacte.type) проверка индекса
+      if (this.activeCell !== null && this.activeCell !== index && this.activeCharacte.position !== this.activeCell) { // проверка индекса
         this.gamePlay.deselectCell(this.activeCell);
       }
       this.activeCell = index;// получаем индекс ячейки
@@ -199,13 +217,19 @@ export default class GameController {
         this.gamePlay.selectCell(index, 'green');
       } else if (this.number === 0) {
         this.gamePlay.setCursor(cursors.notallowed);
-      } else {
-        this.gamePlay.setCursor(cursors.auto);
+        return;
       }
+      this.gamePlay.setCursor(cursors.auto);
     }
   }
 
   onCellLeave(index) {
+    // блокировка поля
+    if (this.gameStop) {
+      this.gamePlay.setCursor('auto');
+      this.gamePlay.deselectCell(index);
+      return;
+    }
     // Убираем инфу о персонаже.
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);
     if (characterInCell) {
@@ -214,7 +238,7 @@ export default class GameController {
   }
 
   takeStepUser(index) {
-    // Делаем шаг. Клик в пустое полеthis.clickCharterComputer === null
+    // Делаем шаг. Клик в пустое поле
     if (this.activeCharacte && !this.allCharactersOnField.find((el) => el.position === index)) { // если выбран активный персонаж
       if (this.number !== null && this.number === 1) { // Если поле есть в допустимых значениях и в нем нет героя
         this.gamePlay.deselectCell(this.activeCharacte.position);// снимаем обводку у активного игрока
@@ -223,14 +247,14 @@ export default class GameController {
         this.activeCharacte = null;
         this.clickCharterComputer = null;
         this.number = null;// обнулить прошлый ход
-        GameState.from({ gamer: 'enemy' });
-        this.gameState.activeTheme = 'enemy';
+        // this.gameState.activeTeame = 'enemy'
       } else {
         this.gamePlay.setCursor(cursors.notallowed);
       }
 
       this.gamePlay.redrawPositions(this.allCharactersOnField);
-      if (this.gameState.activeTheme === 'enemy') {
+      this.gameState.activeTeame = 'enemy';
+      if (this.gameState.activeTeame === 'enemy') {
         this.attackEnemy();
       }
     }
@@ -255,10 +279,10 @@ export default class GameController {
         this.clickCharterComputer = null;
         this.activeCharacteComputer = null;
         this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
+        this.gameState.allCharactersOnField = this.allCharactersOnField;
         this.gamePlay.redrawPositions(this.allCharactersOnField);
         if (this.teamLocationComputer.length > 0) { // проверка на наличие персонажей
-          GameState.from({ gamer: 'enemy' });
-          this.gameState.activeTheme = 'enemy';
+          this.gameState.activeTeame = 'enemy';
           this.attackEnemy();
         } else {
           this.levelUp();
@@ -277,7 +301,6 @@ export default class GameController {
     const radiusattack = this.enemyСharacter.radiusAttack;
     this.enemyPosition = this.teamLocationComputer[this.randomIndex].position;
     let attacked = false;
-    // (this.allCharactersOnField.includes(characterInCell.character.type))
     for (const item of this.teamLocationUser) { // проверяем находится ли кто-то в области атаки, если да то атакуем
       const firstСharacterUser = item.character;
       const positionСharacterUser = item.position;
@@ -292,21 +315,20 @@ export default class GameController {
           // this.getAttack = false;// незнаю нужно ли тут это
           if (firstСharacterUser.health > 0) {
             this.gamePlay.redrawPositions(this.allCharactersOnField); // перерисовываем персонажей
-            GameState.from({ gamer: 'user' });
-            this.gameState.activeTheme = 'user';
+            this.gameState.activeTeame = 'user';
             return;
           }
           if (firstСharacterUser.health <= 0) {
             const indexCharacter = this.teamLocationUser.findIndex((el) => el.position === positionСharacterUser); // В общем массиве находим индекс персонажа который был повержен
             this.teamLocationUser.splice(indexCharacter, 1);// удаляем поверженый персонаж из общего массива
             this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
+            this.gameState.allCharactersOnField = this.allCharactersOnField;
             this.gamePlay.redrawPositions(this.allCharactersOnField);// перерисовываем персонажей
             if (this.teamLocationUser.length !== 0) {
-              GameState.from({ gamer: 'user' });
-              this.gameState.activeTheme = 'user';
-              // return;
+              this.gameState.activeTeame = 'user';
             } else {
-              alert('Game over!!');
+              this.gameStop = true;
+              alert('Game over!');
             }
           }
         })();
@@ -334,27 +356,85 @@ export default class GameController {
     this.teamLocationComputer[this.randomIndex].position = this.randomIndexPosition;
     this.gamePlay.redrawPositions(this.allCharactersOnField); // перерисовываем заново персонажей на поле
     this.number = null;// обнулить прошлый ход
-    GameState.from({ gamer: 'user' });
-    this.gameState.activeTheme = 'user';
+    this.gameState.activeTeame = 'user';
   }
 
   // Поднимаем уровень и выполняем сопутствующие действия
-  // levelUp() {
-  //   this.gameState.userPoints += 1;
-  //   this.gameState.level += 1;
-  //   // увеличить жизни, защиту и урон
-  //   this.teamUser = generateTeam(this.userTypes, this.gameState.level, 2); // создание команды игрока
-  //   this.teamComputer = generateTeam(this.computerTypes, this.gameState.level, 2); // создание команды компьютера
+  levelUp() {
+    const remainingСharacters = [];
+    this.newTeamUser = [];
+    // if (this.gameState.level > 4 || this.teamLocationUser.length === 0 || this.teamLocationComputer.length === 0) {
+    //   this.gameStop = true;
+    // }
+    if (this.gameState.level > 4) {
+      this.gameStop = true;
+    }
 
-  //   this.teamLocationUser = this.locationTeams(this.teamUser); // растановка команды игрока
-  //   this.teamLocationComputer = this.locationTeams(this.teamComputer);// растановка команды компьютера
-  //   // незнаю нужно  ли  this.allCharactersOnField и this.charactersPositions или оно само перикинится на верх
-  //   this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
-  //   this.charactersPositions = this.allCharactersOnField.map((character) => character.position);// Координаты всех персонажей в массиве координат
-  //   this.gamePlay.redrawPositions(this.allCharactersOnField);// Размещение персонажей на поле
-  //   // заново рандомно сформировать и раставить команды
+    // определенное количество игроков и создание
+    // this.init();
+    this.level += 1;
 
-  //   GameState.from({ gamer: 'user' });
-  //   this.gameState.activeTheme = 'user';
-  // }
+    if (this.gameState.numberPlayers < 6) {
+      this.gameState.numberPlayers += 1;
+    } else {
+      this.gameState.numberPlayers = 6;
+    }
+
+    const characterDifference = this.gameState.numberPlayers - this.teamLocationUser.length;
+    if (characterDifference < this.gameState.numberPlayers) {
+      this.newTeamUser = generateTeam(this.userTypes, this.gameState.level, characterDifference);
+    }
+
+    this.teamLocationUser.forEach((el) => remainingСharacters.push(el.character));
+    this.teamUser = [...remainingСharacters, ...this.newTeamUser];
+    this.teamComputer = generateTeam(this.computerTypes, this.gameState.level, this.gameState.numberPlayers);
+
+    this.teamLocationUser = this.locationTeams(this.teamUser); // растановка команды игрока
+    this.teamLocationComputer = this.locationTeams(this.teamComputer);// растановка команды компьютера
+
+    // повышение характеристик
+    this.gameState.userPoints += 1;// засчитывается победа игроку
+    this.gameState.level += 1;// повышение уровня игры
+    this.gameState.savingPoints(this.gameState.userPoints);
+    // for (const item of this.teamLocationUser) {
+    //   item.character.level += 1;
+    //   item.character.attack = Math.floor(Math.max(item.character.attack, item.character.attack * (80 + item.character.health) / 100));
+    //   item.character.defence = Math.floor(Math.max(item.character.defence, item.character.defence * (80 + item.character.health) / 100));
+    //   item.character.health = (item.character.health + 80 >= 100) ? 100 : item.character.health + 80;
+    // }
+    // незнаю нужно  ли  this.allCharactersOnField и this.charactersPositions или оно само перикинится на верх
+    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
+    // повышаю параметры и у противников
+    for (const item of this.allCharactersOnField) {
+      item.character.level += 1;
+      item.character.attack = Math.floor(Math.max(item.character.attack, item.character.attack * (80 + item.character.health) / 100));
+      item.character.defence = Math.floor(Math.max(item.character.defence, item.character.defence * (80 + item.character.health) / 100));
+      item.character.health = (item.character.health + 80 >= 100) ? 100 : item.character.health + 80;
+    }
+
+    this.charactersPositions = this.allCharactersOnField.map((character) => character.position);// Координаты всех персонажей в массиве координат
+    this.gamePlay.redrawPositions(this.allCharactersOnField);// Размещение персонажей на поле
+
+    this.gameState.activeTeame = 'user';
+    this.gamePlay.drawUi(themes[this.level]);// незнаю нужно или нет при отрисовки поля, но на всякий случай пуская пока будет
+    this.gamePlay.redrawPositions(this.allCharactersOnField);
+    this.gameStop = false; // Размещение персонажей на поле
+  }
+
+  saveGame() {
+    this.stateService.save(this.gameState);
+  }
+
+  // загрузка игры
+  loadGame() {
+    this.gameStop = false;
+    const result = this.stateService.load();
+    this.gameState = result.userPoints;// очки
+    this.allCharactersOnField = result.allCharactersOnField;// команда
+    this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле
+    this.gamePlay.redrawPositions(this.allCharactersOnField);
+    this.level = result.level;// уровень
+    this.activeTeame = result.activeTeame; // активная команда
+    this.userPoints = result.userPoints;
+  }
 }
