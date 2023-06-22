@@ -24,6 +24,6 @@ export default function definitionSteps(obj, obj1, elem, step) {
     if (displacementField[coordinateShiftX][coordinateShiftY] === 1) {
       return 1;
     }
-    return 0;
   }
+  return 0;
 }

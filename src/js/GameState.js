@@ -1,14 +1,16 @@
 import themes from './themes';
 
 export default class GameState {
-  constructor(userPoints) {
-    this.userPoints = userPoints; // счет игрока
+  constructor() {
+    this.userPoints = 0; // счет игрока
     this.level = 1; // уровень игры
-    this.allCharactersOnField = [];
     this.activeThemes = themes[this.level];
-    this.activeTeame = null; // активная команда
+    this.activeTeame = 'player'; // активная команда
     this.numberPlayers = 2;
     this.oldPoints = 0;
+    this.teamLocationUser = [];
+    this.teamLocationComputer = [];
+
     // this.teamLocationComputer = [];
   }
 

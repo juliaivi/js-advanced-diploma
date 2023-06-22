@@ -18,6 +18,9 @@
             "LabeledStatement",
             "WithStatement" 
         ],
-        "class-methods-use-this": "off"
-    }
+        "class-methods-use-this": "off",
+        "no-mixed-operators": "off",
+        "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+        "no-alert": "off"
+    }  
 }

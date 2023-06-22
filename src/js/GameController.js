@@ -56,7 +56,7 @@ export default class GameController {
     this.getAttack = false;
     this.gameStop = false;
     // Отрисовка поля
-    this.gameState = new GameState(0);
+    this.gameState = new GameState();
     this.gamePlay.drawUi(themes[this.level]);
 
     const teamUser = generateTeam(this.userTypes, this.level, 2);
@@ -71,8 +71,9 @@ export default class GameController {
 
     // сохранила данные об игре
     this.gameState.activeThemes = themes[this.level];
+    this.gameState.teamLocationUser = this.teamLocationUser;
     this.gameState.teamLocationComputer = this.teamLocationComputer;
-    this.gameState.allCharactersOnField = this.allCharactersOnField;
+    // this.gameState.allCharactersOnField = this.allCharactersOnField;
     this.gameState.level = this.level;
     this.gameState.activeTeame = 'player';
   }
@@ -251,7 +252,7 @@ export default class GameController {
       } else {
         this.gamePlay.setCursor(cursors.notallowed);
       }
-
+      // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
       this.gamePlay.redrawPositions(this.allCharactersOnField);
       this.gameState.activeTeame = 'enemy';
       if (this.gameState.activeTeame === 'enemy') {
@@ -429,12 +430,14 @@ export default class GameController {
   loadGame() {
     this.gameStop = false;
     const result = this.stateService.load();
-    this.gameState = result.userPoints;// очки
-    this.allCharactersOnField = result.allCharactersOnField;// команда
-    this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле
-    this.gamePlay.redrawPositions(this.allCharactersOnField);
+    this.gameState.userPoints = result.userPoints;// очки
+    this.teamLocationUser = result.teamLocationUser;
+    this.teamLocationComputer = result.teamLocationComputer;
+    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];// команда
     this.level = result.level;// уровень
     this.activeTeame = result.activeTeame; // активная команда
-    this.userPoints = result.userPoints;
+
+    this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле
+    this.gamePlay.redrawPositions(this.allCharactersOnField);
   }
 }
