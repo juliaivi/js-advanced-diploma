@@ -10,10 +10,10 @@ import PositionedCharacter from './PositionedCharacter';
 import { generateTeam } from './generators';
 import GamePlay from './GamePlay';
 import cursors from './cursors';
+import GameState from './GameState';
 
 import definitionSteps from './definitionSteps';
 import definitionAttack from './definitionAttack';
-import GameState from './GameState';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -22,7 +22,7 @@ export default class GameController {
     this.userTypes = [Bowman, Swordsman, Magician];
     this.computerTypes = [Vampire, Daemon, Undead];
     this.characterTypeUser = ['bowman', 'swordsman', 'magician'];
-    this.level = 1;
+    this.level = 3;
 
     this.teamLocationUser = [];
     this.activeCharacte = null;
@@ -35,7 +35,7 @@ export default class GameController {
     this.teamComputer = [];
     this.teamLocationUser = [];
     this.teamLocationComputer = [];
-    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
+    // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
     this.charactersPositions = [];
   }
 
@@ -73,7 +73,6 @@ export default class GameController {
     this.gameState.activeThemes = themes[this.level];
     this.gameState.teamLocationUser = this.teamLocationUser;
     this.gameState.teamLocationComputer = this.teamLocationComputer;
-    // this.gameState.allCharactersOnField = this.allCharactersOnField;
     this.gameState.level = this.level;
     this.gameState.activeTeame = 'player';
   }
@@ -106,6 +105,7 @@ export default class GameController {
         } else {
           position = this.positionComputer(this.gamePlay.boardSize * 2 - 1);
         }
+
         if (beltArray.includes(position)) {
           break;
         } else {
@@ -169,7 +169,9 @@ export default class GameController {
       if (this.characterTypeUser.includes(characterInCell.character.type)) { // Наведение на своего персонажа
         this.gamePlay.setCursor(cursors.pointer);
         return;
-      } if (this.activeCharacte === null) {
+      }
+
+      if (this.activeCharacte === null) {
         this.gamePlay.setCursor(cursors.auto);
         return;
       }
@@ -183,16 +185,18 @@ export default class GameController {
     if (this.activeCharacte !== null && this.activeCharacteComputer !== null && !this.characterTypeUser.includes(obj.character.type)) {
       this.gamePlay.deselectCell(this.activeCharacteComputer.position);
     }
+
     if (this.activeCell !== null && this.activeCell !== index && this.activeCharacteComputer !== index) { // проверка индекса
       this.gamePlay.deselectCell(this.activeCell);
     }
     this.activeCell = index;// получаем индекс ячейки
     const radiusattack = this.activeCharacte.character.radiusAttack;// опеределяем атаку
-    //
+
     if (this.activeCharacte !== null) {
       this.activeCharacteComputer = obj;
     }
     this.getAttack = definitionAttack(this.activeCharacte.position, this.activeCell, this.gamePlay.boardSize, radiusattack);
+
     if (this.getAttack === true && this.activeCharacte.position !== this.activeCell) { // проверка на радиус поражения
       this.gamePlay.deselectCell(this.activeCell);
       this.gamePlay.selectCell(index, 'red');
@@ -208,11 +212,14 @@ export default class GameController {
     // Доступные шаги.Активное поле. Куда можно ходить. - окрашивание
     if (this.activeCharacte !== null && this.activeCharacteComputer === null && this.allCharactersOnField.find((el) => el.position !== index)) {
       this.step = this.activeCharacte.character.radiusMovement;// получаем шаг персонажа
+
       if (this.activeCell !== null && this.activeCell !== index && this.activeCharacte.position !== this.activeCell) { // проверка индекса
         this.gamePlay.deselectCell(this.activeCell);
       }
+
       this.activeCell = index;// получаем индекс ячейки
       this.number = definitionSteps(this.activeCharacte.position, this.activeCell, this.gamePlay.boardSize, this.step); // определям может ли персонаж ходить
+
       if (this.number === 1) {
         this.gamePlay.setCursor(cursors.pointer);
         this.gamePlay.selectCell(index, 'green');
@@ -220,6 +227,7 @@ export default class GameController {
         this.gamePlay.setCursor(cursors.notallowed);
         return;
       }
+
       this.gamePlay.setCursor(cursors.auto);
     }
   }
@@ -233,6 +241,7 @@ export default class GameController {
     }
     // Убираем инфу о персонаже.
     const characterInCell = this.allCharactersOnField.find((el) => el.position === index);
+
     if (characterInCell) {
       this.gamePlay.hideCellTooltip(index);
     }
@@ -251,42 +260,48 @@ export default class GameController {
         // this.gameState.activeTeame = 'enemy'
       } else {
         this.gamePlay.setCursor(cursors.notallowed);
+        return;
       }
       // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
       this.gamePlay.redrawPositions(this.allCharactersOnField);
       this.gameState.activeTeame = 'enemy';
-      if (this.gameState.activeTeame === 'enemy') {
+
+      if (this.gameState.activeTeame === 'enemy' && this.teamLocationComputer.length > 0) {
         this.attackEnemy();
       }
     }
   }
 
-  attackUser(index, obj) {
-    if (this.activeCharacte && this.clickCharterComputer !== null && !this.characterTypeUser.includes(obj.character.type) && this.getAttack === true) { // персонаж выделен, враг есть и это противник
+  attackUser(index) {
+    if (this.activeCharacte && this.clickCharterComputer !== null && this.getAttack === true) { // && !this.characterTypeUser.includes(obj.character.type)персонаж выделен, враг есть и это противник
       const damage = Math.max(this.activeCharacte.character.attack - this.clickCharterComputer.character.defence, this.activeCharacte.character.attack * 0.1);// расчитывания урона
 
       (async () => {
         await this.gamePlay.showDamage(index, damage);
         const health = this.clickCharterComputer.character.health - damage;// отнимаю от здоровья противника (наношу урон)
         this.clickCharterComputer.character.health = health;// переписываем здоровье на новое
-        this.getAttack = false;
+
         if (this.clickCharterComputer.character.health <= 0) { // если жизней у персонажа нет - удалить
           const indexCharacter = this.teamLocationComputer.findIndex((item) => item.position === this.clickCharterComputer.position); // В общем массиве находим индекс персонажа который был повержен
           this.teamLocationComputer.splice(indexCharacter, 1);// удаляем поверженый персонаж из общего массива
         }
         this.gamePlay.deselectCell(this.activeCell);// удаляем красную обводку после атаки
         this.gamePlay.deselectCell(this.activeCharacte.position);
-        this.activeCharacte = null;
-        this.clickCharterComputer = null;
-        this.activeCharacteComputer = null;
         this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
         this.gameState.allCharactersOnField = this.allCharactersOnField;
         this.gamePlay.redrawPositions(this.allCharactersOnField);
+        this.getAttack = false;
+        this.activeCharacte = null;
+        this.clickCharterComputer = null;
+        this.activeCharacteComputer = null;
+
         if (this.teamLocationComputer.length > 0) { // проверка на наличие персонажей
           this.gameState.activeTeame = 'enemy';
           this.attackEnemy();
-        } else {
-          this.levelUp();
+        }
+
+        if (this.teamLocationComputer.length === 0) {
+          await this.levelUp();
         }
       })();
 
@@ -305,6 +320,7 @@ export default class GameController {
     for (const item of this.teamLocationUser) { // проверяем находится ли кто-то в области атаки, если да то атакуем
       const firstСharacterUser = item.character;
       const positionСharacterUser = item.position;
+
       if (definitionAttack(this.enemyPosition, positionСharacterUser, this.gamePlay.boardSize, radiusattack) === true) {
         attacked = true; // если атаковать можно
 
@@ -314,17 +330,20 @@ export default class GameController {
           const health = firstСharacterUser.health - damage;// отнимаю от здоровья противника (наношу урон)
           firstСharacterUser.health = health;// переписываем здоровье на новое
           // this.getAttack = false;// незнаю нужно ли тут это
+
           if (firstСharacterUser.health > 0) {
             this.gamePlay.redrawPositions(this.allCharactersOnField); // перерисовываем персонажей
             this.gameState.activeTeame = 'user';
             return;
           }
+
           if (firstСharacterUser.health <= 0) {
             const indexCharacter = this.teamLocationUser.findIndex((el) => el.position === positionСharacterUser); // В общем массиве находим индекс персонажа который был повержен
             this.teamLocationUser.splice(indexCharacter, 1);// удаляем поверженый персонаж из общего массива
             this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
             this.gameState.allCharactersOnField = this.allCharactersOnField;
             this.gamePlay.redrawPositions(this.allCharactersOnField);// перерисовываем персонажей
+
             if (this.teamLocationUser.length !== 0) {
               this.gameState.activeTeame = 'user';
             } else {
@@ -397,17 +416,11 @@ export default class GameController {
     this.gameState.userPoints += 1;// засчитывается победа игроку
     this.gameState.level += 1;// повышение уровня игры
     this.gameState.savingPoints(this.gameState.userPoints);
-    // for (const item of this.teamLocationUser) {
-    //   item.character.level += 1;
-    //   item.character.attack = Math.floor(Math.max(item.character.attack, item.character.attack * (80 + item.character.health) / 100));
-    //   item.character.defence = Math.floor(Math.max(item.character.defence, item.character.defence * (80 + item.character.health) / 100));
-    //   item.character.health = (item.character.health + 80 >= 100) ? 100 : item.character.health + 80;
-    // }
-    // незнаю нужно  ли  this.allCharactersOnField и this.charactersPositions или оно само перикинится на верх
+    // незнаю нужно  ли  this.allCharactersOnField или оно само перикинится на верх
     this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
+
     // повышаю параметры и у противников
     for (const item of this.allCharactersOnField) {
-      item.character.level += 1;
       item.character.attack = Math.floor(Math.max(item.character.attack, item.character.attack * (80 + item.character.health) / 100));
       item.character.defence = Math.floor(Math.max(item.character.defence, item.character.defence * (80 + item.character.health) / 100));
       item.character.health = (item.character.health + 80 >= 100) ? 100 : item.character.health + 80;

@@ -1,7 +1,7 @@
 import definitionSteps from '../definitionSteps';
 
 test('you can take a step', () => {
-  expect(definitionSteps(1, 4, 8, 4)).toBe(1);
+  expect(definitionSteps(1, 63, 8, 4)).toBe(0);
 });
 
 test('you can take a step', () => {

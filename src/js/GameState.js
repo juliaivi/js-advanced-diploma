@@ -10,15 +10,13 @@ export default class GameState {
     this.oldPoints = 0;
     this.teamLocationUser = [];
     this.teamLocationComputer = [];
-
-    // this.teamLocationComputer = [];
   }
 
-  static from(object) {
-    // TODO: create object
-    this.queue = object; // храниение хода
-    return null;
-  }
+  // static from(object) {
+  //   // TODO: create object
+  //   this.queue = object; // храниение хода
+  //   return null;
+  // }
 
   // TODO только незнаю правильно ли сохраняю очки для переноса из старой игры в новую игру
   savingPoints(el) {
