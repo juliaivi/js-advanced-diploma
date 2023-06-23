@@ -22,7 +22,7 @@ export default class GameController {
     this.userTypes = [Bowman, Swordsman, Magician];
     this.computerTypes = [Vampire, Daemon, Undead];
     this.characterTypeUser = ['bowman', 'swordsman', 'magician'];
-    this.level = 3;
+    this.level = 1;
 
     this.teamLocationUser = [];
     this.activeCharacte = null;

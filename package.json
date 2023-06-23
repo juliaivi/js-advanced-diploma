@@ -4,8 +4,9 @@
   "description": "###### tags: `netology` `advanced js`",
   "main": "index.js",
   "scripts": {
+    "dev": "webpack --mode development",
     "start": "webpack server --mode development  --open",
-    "build": "webpack --mode production",
+    "prod": "webpack --mode production",
     "babel": "babel src -d dist",
     "lint": "eslint .",
     "test": "jest --coverage"
