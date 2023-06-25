@@ -40,6 +40,7 @@ export default class GameController {
   }
 
   init() {
+    this.gamePlay.drawUi(themes[this.level]);
     this.newGame();
 
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this)); // В качестве аргумента передавая callback. Callback принимает всего один аргумент - индекс ячейки поля, на которой происходит событие.
@@ -57,7 +58,7 @@ export default class GameController {
     this.gameStop = false;
     // Отрисовка поля
     this.gameState = new GameState();
-    this.gamePlay.drawUi(themes[this.level]);
+    // this.gamePlay.drawUi(themes[this.level]);
 
     const teamUser = generateTeam(this.userTypes, this.level, 2);
     const teamComputer = generateTeam(this.computerTypes, this.level, 2);
@@ -379,10 +380,19 @@ export default class GameController {
     this.gameState.activeTeame = 'user';
   }
 
+  ucFirst(str) {
+    if (!str) {
+      return str;
+    }
+    return str[0].toUpperCase() + str.slice(1);
+  }
+
   // Поднимаем уровень и выполняем сопутствующие действия
   levelUp() {
     const remainingСharacters = [];
     this.newTeamUser = [];
+    let newElement = [];
+
     // if (this.gameState.level > 4 || this.teamLocationUser.length === 0 || this.teamLocationComputer.length === 0) {
     //   this.gameStop = true;
     // }
@@ -405,7 +415,25 @@ export default class GameController {
       this.newTeamUser = generateTeam(this.userTypes, this.gameState.level, characterDifference);
     }
 
-    this.teamLocationUser.forEach((el) => remainingСharacters.push(el.character));
+    this.teamLocationUser.forEach((el) => {
+      if (!this.userTypes.includes(el.character)) {
+        const {
+          type, level, attack, defence, health, radiusMovement, radiusAttack,
+        } = el.character;
+        do {
+          newElement = generateTeam(this.userTypes, this.gameState.level, 1);
+        } while (newElement === type);
+        newElement.level = level;
+        newElement.attack = attack;
+        newElement.defence = defence;
+        newElement.health = health;
+        newElement.radiusMovement = radiusMovement;
+        newElement.radiusAttack = radiusAttack;
+        remainingСharacters.push(...newElement);
+      } else {
+        remainingСharacters.push(el.character);
+      }
+    });
     this.teamUser = [...remainingСharacters, ...this.newTeamUser];
     this.teamComputer = generateTeam(this.computerTypes, this.gameState.level, this.gameState.numberPlayers);
 
