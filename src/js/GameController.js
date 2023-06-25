@@ -455,12 +455,12 @@ export default class GameController {
     }
 
     this.charactersPositions = this.allCharactersOnField.map((character) => character.position);// Координаты всех персонажей в массиве координат
-    this.gamePlay.redrawPositions(this.allCharactersOnField);// Размещение персонажей на поле
+    this.gamePlay.redrawPositions(this.allCharactersOnField);
 
     this.gameState.activeTeame = 'user';
     this.gamePlay.drawUi(themes[this.level]);// незнаю нужно или нет при отрисовки поля, но на всякий случай пуская пока будет
     this.gamePlay.redrawPositions(this.allCharactersOnField);
-    this.gameStop = false; // Размещение персонажей на поле
+    this.gameStop = false;
   }
 
   saveGame() {
@@ -474,8 +474,8 @@ export default class GameController {
     this.gameState.userPoints = result.userPoints;// очки
     this.teamLocationUser = result.teamLocationUser;
     this.teamLocationComputer = result.teamLocationComputer;
-    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];// команда
-    this.level = result.level;// уровень
+    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
+    this.level = result.level;
     this.activeTeame = result.activeTeame; // активная команда
 
     this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле

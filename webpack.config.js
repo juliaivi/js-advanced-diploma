@@ -9,8 +9,8 @@ module.exports = {
   mode: 'development',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js',
-    assetModuleFilename: 'img/[name][ext]',
+    filename: '[name].js',
+    // assetModuleFilename: 'img/[name][ext]',
   },
 
   module: {
@@ -36,7 +36,7 @@ module.exports = {
       template: './index.html',
     }),
     new MiniCSSExtractPlugin({
-      filename: '[name].[contenthash].css',
+      filename: '[name].css',
     }),
     new CleanWebpackPlugin(),
   ],
