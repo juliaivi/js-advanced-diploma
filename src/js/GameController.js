@@ -35,8 +35,9 @@ export default class GameController {
     this.teamComputer = [];
     this.teamLocationUser = [];
     this.teamLocationComputer = [];
-    // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
     this.charactersPositions = [];
+
+    this.error = [];
   }
 
   init() {
@@ -263,7 +264,8 @@ export default class GameController {
         this.gamePlay.setCursor(cursors.notallowed);
         return;
       }
-      // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
+      this.gameState.teamLocationComputer = this.teamLocationComputer;
+      this.gameState.teamLocationUser = this.teamLocationUser;
       this.gamePlay.redrawPositions(this.allCharactersOnField);
       this.gameState.activeTeame = 'enemy';
 
@@ -280,7 +282,7 @@ export default class GameController {
       (async () => {
         await this.gamePlay.showDamage(index, damage);
         const health = this.clickCharterComputer.character.health - damage;// отнимаю от здоровья противника (наношу урон)
-        this.clickCharterComputer.character.health = health;// переписываем здоровье на новое
+        this.clickCharterComputer.character.health = health;
 
         if (this.clickCharterComputer.character.health <= 0) { // если жизней у персонажа нет - удалить
           const indexCharacter = this.teamLocationComputer.findIndex((item) => item.position === this.clickCharterComputer.position); // В общем массиве находим индекс персонажа который был повержен
@@ -290,13 +292,15 @@ export default class GameController {
         this.gamePlay.deselectCell(this.activeCharacte.position);
         this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
         this.gameState.allCharactersOnField = this.allCharactersOnField;
+        this.gameState.teamLocationComputer = this.teamLocationComputer;
+        this.gameState.teamLocationUser = this.teamLocationUser;
         this.gamePlay.redrawPositions(this.allCharactersOnField);
         this.getAttack = false;
         this.activeCharacte = null;
         this.clickCharterComputer = null;
         this.activeCharacteComputer = null;
 
-        if (this.teamLocationComputer.length > 0) { // проверка на наличие персонажей
+        if (this.teamLocationComputer.length > 0) {
           this.gameState.activeTeame = 'enemy';
           this.attackEnemy();
         }
@@ -313,7 +317,7 @@ export default class GameController {
   }
 
   attackEnemy() {
-    this.randomIndex = Math.floor(Math.random() * this.teamLocationComputer.length); // случайный индекс для персонажа
+    this.randomIndex = Math.floor(Math.random() * this.teamLocationComputer.length);
     this.enemyСharacter = this.teamLocationComputer[this.randomIndex].character; // получили персонаж
     const radiusattack = this.enemyСharacter.radiusAttack;
     this.enemyPosition = this.teamLocationComputer[this.randomIndex].position;
@@ -323,17 +327,18 @@ export default class GameController {
       const positionСharacterUser = item.position;
 
       if (definitionAttack(this.enemyPosition, positionСharacterUser, this.gamePlay.boardSize, radiusattack) === true) {
-        attacked = true; // если атаковать можно
+        attacked = true;
 
-        const damage = Math.max(this.enemyСharacter.attack - firstСharacterUser.defence, this.enemyСharacter.attack * 0.1);// расчитывания урона
+        const damage = Math.max(this.enemyСharacter.attack - firstСharacterUser.defence, this.enemyСharacter.attack * 0.1);
         (async () => {
           await this.gamePlay.showDamage(positionСharacterUser, damage); // визуализации урона......................................index
           const health = firstСharacterUser.health - damage;// отнимаю от здоровья противника (наношу урон)
-          firstСharacterUser.health = health;// переписываем здоровье на новое
-          // this.getAttack = false;// незнаю нужно ли тут это
+          firstСharacterUser.health = health;
 
           if (firstСharacterUser.health > 0) {
-            this.gamePlay.redrawPositions(this.allCharactersOnField); // перерисовываем персонажей
+            this.gameState.teamLocationComputer = this.teamLocationComputer;
+            this.gameState.teamLocationUser = this.teamLocationUser;
+            this.gamePlay.redrawPositions(this.allCharactersOnField);
             this.gameState.activeTeame = 'user';
             return;
           }
@@ -343,7 +348,9 @@ export default class GameController {
             this.teamLocationUser.splice(indexCharacter, 1);// удаляем поверженый персонаж из общего массива
             this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
             this.gameState.allCharactersOnField = this.allCharactersOnField;
-            this.gamePlay.redrawPositions(this.allCharactersOnField);// перерисовываем персонажей
+            this.gameState.teamLocationComputer = this.teamLocationComputer;
+            this.gameState.teamLocationUser = this.teamLocationUser;
+            this.gamePlay.redrawPositions(this.allCharactersOnField);
 
             if (this.teamLocationUser.length !== 0) {
               this.gameState.activeTeame = 'user';
@@ -375,16 +382,11 @@ export default class GameController {
     } while (stepsEnemy !== 1);
     this.enemyPosition = this.randomIndexPosition;
     this.teamLocationComputer[this.randomIndex].position = this.randomIndexPosition;
-    this.gamePlay.redrawPositions(this.allCharactersOnField); // перерисовываем заново персонажей на поле
+    this.gameState.teamLocationComputer = this.teamLocationComputer;
+    this.gameState.teamLocationUser = this.teamLocationUser;
+    this.gamePlay.redrawPositions(this.allCharactersOnField);
     this.number = null;// обнулить прошлый ход
     this.gameState.activeTeame = 'user';
-  }
-
-  ucFirst(str) {
-    if (!str) {
-      return str;
-    }
-    return str[0].toUpperCase() + str.slice(1);
   }
 
   // Поднимаем уровень и выполняем сопутствующие действия
@@ -401,7 +403,6 @@ export default class GameController {
     }
 
     // определенное количество игроков и создание
-    // this.init();
     this.level += 1;
 
     if (this.gameState.numberPlayers < 6) {
@@ -437,15 +438,14 @@ export default class GameController {
     this.teamUser = [...remainingСharacters, ...this.newTeamUser];
     this.teamComputer = generateTeam(this.computerTypes, this.gameState.level, this.gameState.numberPlayers);
 
-    this.teamLocationUser = this.locationTeams(this.teamUser); // растановка команды игрока
-    this.teamLocationComputer = this.locationTeams(this.teamComputer);// растановка команды компьютера
+    this.teamLocationUser = this.locationTeams(this.teamUser);
+    this.teamLocationComputer = this.locationTeams(this.teamComputer);
 
     // повышение характеристик
     this.gameState.userPoints += 1;// засчитывается победа игроку
     this.gameState.level += 1;// повышение уровня игры
     this.gameState.savingPoints(this.gameState.userPoints);
-    // незнаю нужно  ли  this.allCharactersOnField или оно само перикинится на верх
-    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
+    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
 
     // повышаю параметры и у противников
     for (const item of this.allCharactersOnField) {
@@ -458,7 +458,7 @@ export default class GameController {
     this.gamePlay.redrawPositions(this.allCharactersOnField);
 
     this.gameState.activeTeame = 'user';
-    this.gamePlay.drawUi(themes[this.level]);// незнаю нужно или нет при отрисовки поля, но на всякий случай пуская пока будет
+    this.gamePlay.drawUi(themes[this.level]);
     this.gamePlay.redrawPositions(this.allCharactersOnField);
     this.gameStop = false;
   }
@@ -478,7 +478,7 @@ export default class GameController {
     this.level = result.level;
     this.activeTeame = result.activeTeame; // активная команда
 
-    this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле
+    this.gamePlay.drawUi(result.activeThemes);
     this.gamePlay.redrawPositions(this.allCharactersOnField);
   }
 }
