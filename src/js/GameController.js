@@ -35,7 +35,6 @@ export default class GameController {
     this.teamComputer = [];
     this.teamLocationUser = [];
     this.teamLocationComputer = [];
-    // this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
     this.charactersPositions = [];
   }
 
@@ -278,6 +277,7 @@ export default class GameController {
 
       (async () => {
         await this.gamePlay.showDamage(index, damage);
+
         const health = (this.clickCharterComputer.character.health - damage).toFixed(1);
         this.clickCharterComputer.character.health = health;
 
@@ -314,7 +314,7 @@ export default class GameController {
   }
 
   attackEnemy() {
-    this.randomIndex = Math.floor(Math.random() * this.teamLocationComputer.length); // случайный индекс для персонажа
+    this.randomIndex = Math.floor(Math.random() * this.teamLocationComputer.length);
     this.enemyСharacter = this.teamLocationComputer[this.randomIndex].character; // получили персонаж
     const radiusattack = this.enemyСharacter.radiusAttack;
     this.enemyPosition = this.teamLocationComputer[this.randomIndex].position;
@@ -330,6 +330,8 @@ export default class GameController {
         (async () => {
           await this.gamePlay.showDamage(positionСharacterUser, damage); // визуализации урона......................................index
           const health = (firstСharacterUser.health - damage).toFixed(1);
+
+
           firstСharacterUser.health = health;
 
           if (firstСharacterUser.health > 0) {
@@ -441,8 +443,7 @@ export default class GameController {
     this.gameState.userPoints += 1;// засчитывается победа игроку
     this.gameState.level += 1;// повышение уровня игры
     this.gameState.savingPoints(this.gameState.userPoints);
-    // незнаю нужно  ли  this.allCharactersOnField или оно само перикинится на верх
-    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer]; // Массив всех персонажей на поле
+    this.allCharactersOnField = [...this.teamLocationUser, ...this.teamLocationComputer];
 
     // повышаю параметры и у противников
     for (const item of this.allCharactersOnField) {
@@ -475,7 +476,7 @@ export default class GameController {
     this.level = result.level;
     this.activeTeame = result.activeTeame; // активная команда
 
-    this.gamePlay.drawUi(result.activeThemes); // из результата возьмем активное поле
+    this.gamePlay.drawUi(result.activeThemes);
     this.gamePlay.redrawPositions(this.allCharactersOnField);
   }
 }
