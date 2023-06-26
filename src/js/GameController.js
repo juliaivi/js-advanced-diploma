@@ -278,7 +278,7 @@ export default class GameController {
       (async () => {
         await this.gamePlay.showDamage(index, damage);
 
-        const health = (this.clickCharterComputer.character.health - damage).toFixed(1);
+        const health = (this.clickCharterComputer.character.health - damage);
         this.clickCharterComputer.character.health = health;
 
         if (this.clickCharterComputer.character.health <= 0) { 
@@ -329,7 +329,7 @@ export default class GameController {
         const damage = Math.max(this.enemyСharacter.attack - firstСharacterUser.defence, this.enemyСharacter.attack * 0.1);
         (async () => {
           await this.gamePlay.showDamage(positionСharacterUser, damage); // визуализации урона......................................index
-          const health = (firstСharacterUser.health - damage).toFixed(1);
+          const health = (firstСharacterUser.health - damage);
 
 
           firstСharacterUser.health = health;
@@ -421,13 +421,13 @@ export default class GameController {
         } = el.character;
         do {
           newElement = generateTeam(this.userTypes, this.gameState.level, 1);
-        } while (newElement.type === type);
-        newElement.level = level;
-        newElement.attack = attack;
-        newElement.defence = defence;
-        newElement.health = health;
-        newElement.radiusMovement = radiusMovement;
-        newElement.radiusAttack = radiusAttack;
+        } while (newElement[0].type !== type);
+        newElement[0].level = level;
+        newElement[0].attack = attack;
+        newElement[0].defence = defence;
+        newElement[0].health = health;
+        newElement[0].radiusMovement = radiusMovement;
+        newElement[0].radiusAttack = radiusAttack;
         remainingСharacters.push(...newElement);
       } else {
         remainingСharacters.push(el.character);
